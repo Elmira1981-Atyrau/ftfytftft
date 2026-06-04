@@ -1,390 +1,534 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>План vs Факт — Бюджетный анализ</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── CSS Variables (темы) ─────────────────────────────── */
+:root {
+  --bg:        #0f0f1a;
+  --bg2:       #1a1a2e;
+  --bg3:       #1e1e3a;
+  --border:    #2a2a4a;
+  --border2:   #3a3a5a;
+  --text:      #f0f0f0;
+  --text2:     #c0c0e0;
+  --text3:     #94a3b8;
+  --text4:     #888;
+  --accent:    #ff6b00;
+  --accent2:   #ff9a3c;
+  --accent3:   #ffb347;
+  --grid-line: #1e1e38;
+  --shadow:    rgba(0,0,0,0.6);
+  --card-name: #e0e0ff;
+  --num-col:   #d0d0f0;
+  --chart-bg:  #0f0f1a;
+}
 
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #0f0f1a;
-    color: #f0f0f0;
-    min-height: 100vh;
-  }
+[data-theme="light"] {
+  --bg:        #f4f6fb;
+  --bg2:       #ffffff;
+  --bg3:       #eef1f8;
+  --border:    #dde2ef;
+  --border2:   #c8cfe0;
+  --text:      #1a1a2e;
+  --text2:     #333a55;
+  --text3:     #5a6480;
+  --text4:     #9099b0;
+  --grid-line: #e8ecf4;
+  --shadow:    rgba(0,0,0,0.15);
+  --card-name: #1e2545;
+  --num-col:   #2a3050;
+  --chart-bg:  #ffffff;
+}
 
-  header {
-    background: linear-gradient(135deg, #ff6b00 0%, #ff9a3c 50%, #ffb347 100%);
-    padding: 24px 20px 20px;
-    text-align: center;
-    box-shadow: 0 4px 20px rgba(255,107,0,0.4);
-  }
+/* ── Reset ────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  header h1 {
-    font-size: clamp(1.4rem, 4vw, 2.2rem);
-    font-weight: 800;
-    color: #fff;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    letter-spacing: -0.5px;
-  }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
 
-  header p {
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.85);
-    margin-top: 6px;
-  }
+/* ── Header ───────────────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, #ff6b00 0%, #ff9a3c 50%, #ffb347 100%);
+  padding: 20px 20px 16px;
+  box-shadow: 0 4px 20px rgba(255,107,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px 16px 40px;
-  }
+.header-left h1 {
+  font-size: clamp(1.2rem, 3.5vw, 2rem);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
 
-  /* Summary Cards */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
-    margin-bottom: 28px;
-  }
+.header-left p {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.85);
+  margin-top: 4px;
+}
 
-  .card {
-    background: #1a1a2e;
-    border: 1px solid #2a2a4a;
-    border-radius: 14px;
-    padding: 18px 16px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
+.header-actions { display: flex; gap: 8px; align-items: center; }
 
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #ff6b00, #ffb347);
-  }
+.theme-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.1rem;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.theme-btn:hover { background: rgba(255,255,255,0.35); }
 
-  .card .label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #888;
-    margin-bottom: 8px;
-  }
+.print-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.print-btn:hover { background: rgba(255,255,255,0.35); }
 
-  .card .value {
-    font-size: clamp(1rem, 2.5vw, 1.4rem);
-    font-weight: 700;
-    color: #fff;
-  }
+/* ── Container ────────────────────────────────────────── */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
 
-  .card .value.positive { color: #4ade80; }
-  .card .value.negative { color: #f87171; }
+/* ── Summary Cards ────────────────────────────────────── */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
 
-  /* Toolbar */
-  .toolbar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-bottom: 20px;
-  }
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s, border-color 0.3s;
+}
 
-  .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff6b00, #ffb347);
+}
 
-  .btn-primary {
-    background: linear-gradient(135deg, #ff6b00, #ff9a3c);
-    color: #fff;
-    box-shadow: 0 3px 12px rgba(255,107,0,0.35);
-  }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(255,107,0,0.5); }
+.card .label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text4);
+  margin-bottom: 8px;
+}
 
-  .btn-secondary {
-    background: #1a1a2e;
-    color: #ccc;
-    border: 1px solid #3a3a5a;
-  }
-  .btn-secondary:hover { border-color: #ff6b00; color: #ff9a3c; }
+.card .value {
+  font-size: clamp(0.95rem, 2.5vw, 1.3rem);
+  font-weight: 700;
+  color: var(--text);
+}
 
-  .btn-danger {
-    background: transparent;
-    color: #f87171;
-    border: 1px solid #f87171;
-  }
-  .btn-danger:hover { background: rgba(248,113,113,0.1); }
+.card .value.positive { color: #4ade80; }
+.card .value.negative { color: #f87171; }
 
-  .btn-export {
-    background: #1a3a2a;
-    color: #4ade80;
-    border: 1px solid #4ade80;
-  }
-  .btn-export:hover { background: rgba(74,222,128,0.15); }
+/* ── Filter Bar ───────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
 
-  /* Table Wrapper */
-  .table-wrap {
-    overflow-x: auto;
-    border-radius: 14px;
-    border: 1px solid #2a2a4a;
-    margin-bottom: 28px;
-  }
+.filter-bar input, .filter-bar select {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.88rem;
-  }
+.filter-bar input { flex: 1; min-width: 160px; }
+.filter-bar select { min-width: 160px; }
 
-  thead tr {
-    background: linear-gradient(135deg, #1e1e3a, #2a1a3e);
-  }
+.filter-bar input:focus, .filter-bar select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,107,0,0.12);
+}
 
-  thead th {
-    padding: 14px 12px;
-    text-align: left;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: #ff9a3c;
-    border-bottom: 2px solid #ff6b0033;
-    white-space: nowrap;
-  }
+.filter-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text4);
+  white-space: nowrap;
+}
 
-  tbody tr {
-    border-bottom: 1px solid #1e1e32;
-    transition: background 0.15s;
-  }
+/* ── Toolbar ──────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
 
-  tbody tr:hover { background: #1a1a2e; }
+.btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
 
-  tbody td {
-    padding: 13px 12px;
-    vertical-align: middle;
-  }
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b00, #ff9a3c);
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(255,107,0,0.35);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(255,107,0,0.5); }
 
-  .td-name { font-weight: 600; color: #e0e0ff; min-width: 140px; }
-  .td-num { font-family: 'Courier New', monospace; text-align: right; white-space: nowrap; color: #d0d0f0; }
+.btn-secondary {
+  background: var(--bg2);
+  color: var(--text3);
+  border: 1px solid var(--border2);
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent2); }
 
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .badge-pos { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
-  .badge-neg { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
-  .badge-zero { background: rgba(148,163,184,0.1); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
+.btn-danger {
+  background: transparent;
+  color: #f87171;
+  border: 1px solid #f87171;
+}
+.btn-danger:hover { background: rgba(248,113,113,0.1); }
 
-  .reason-text {
-    font-size: 0.78rem;
-    color: #94a3b8;
-    max-width: 200px;
-    line-height: 1.4;
-  }
+.btn-export {
+  background: transparent;
+  color: #4ade80;
+  border: 1px solid #4ade80;
+}
+.btn-export:hover { background: rgba(74,222,128,0.1); }
 
-  .action-btns { display: flex; gap: 6px; }
-  .btn-sm {
-    padding: 5px 10px;
-    font-size: 0.75rem;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.15s;
-  }
-  .btn-edit { background: #1e3a5a; color: #60a5fa; }
-  .btn-edit:hover { background: #2a4a6a; }
-  .btn-del { background: #3a1a1a; color: #f87171; }
-  .btn-del:hover { background: #4a2a2a; }
+/* ── Table ────────────────────────────────────────────── */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
 
-  /* Modal / Form */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    z-index: 100;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 40px 16px;
-    overflow-y: auto;
-  }
-  .modal-overlay.open { display: flex; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+}
 
-  .modal {
-    background: #1a1a2e;
-    border: 1px solid #3a3a5a;
-    border-radius: 18px;
-    padding: 28px 24px;
-    width: 100%;
-    max-width: 520px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-  }
+thead tr { background: var(--bg3); }
 
-  .modal h2 {
-    font-size: 1.2rem;
-    color: #ff9a3c;
-    margin-bottom: 22px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #2a2a4a;
-  }
+thead th {
+  padding: 13px 12px;
+  text-align: left;
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--accent2);
+  border-bottom: 2px solid rgba(255,107,0,0.2);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
 
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
+thead th:hover { color: var(--accent3); }
+thead th.sort-asc::after { content: ' ↑'; }
+thead th.sort-desc::after { content: ' ↓'; }
+thead th:last-child { cursor: default; }
+thead th:last-child:hover { color: var(--accent2); }
 
-  @media(max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+tbody tr:hover { background: var(--bg3); }
+tbody td { padding: 12px 12px; vertical-align: middle; }
 
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group.full { grid-column: 1 / -1; }
+/* Category group row */
+.cat-group-row td {
+  background: linear-gradient(135deg, var(--bg3), var(--bg2));
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent2);
+  padding: 8px 12px;
+  border-top: 2px solid rgba(255,107,0,0.2);
+}
 
-  label {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: #888;
-  }
+.cat-subtotal td {
+  background: var(--bg3);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text3);
+  font-style: italic;
+}
 
-  input, textarea, select {
-    background: #0f0f1a;
-    border: 1px solid #3a3a5a;
-    border-radius: 8px;
-    color: #f0f0f0;
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    font-family: inherit;
-    transition: border-color 0.2s;
-    outline: none;
-  }
-  input:focus, textarea:focus, select:focus {
-    border-color: #ff6b00;
-    box-shadow: 0 0 0 3px rgba(255,107,0,0.15);
-  }
+.td-name { font-weight: 600; color: var(--card-name); min-width: 130px; }
+.td-num { font-family: 'Courier New', monospace; text-align: right; white-space: nowrap; color: var(--num-col); }
+.td-cat { font-size: 0.72rem; color: var(--text3); }
 
-  textarea { resize: vertical; min-height: 70px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-pos { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+.badge-neg { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+.badge-zero { background: rgba(148,163,184,0.1); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
 
-  .form-hint {
-    font-size: 0.75rem;
-    color: #666;
-    margin-top: 2px;
-  }
+.reason-text {
+  font-size: 0.77rem;
+  color: var(--text3);
+  max-width: 190px;
+  line-height: 1.4;
+}
 
-  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+.action-btns { display: flex; gap: 6px; }
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-edit { background: #1e3a5a; color: #60a5fa; }
+.btn-edit:hover { background: #2a4a6a; }
+.btn-del { background: #3a1a1a; color: #f87171; }
+.btn-del:hover { background: #4a2a2a; }
 
-  /* Charts */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
+[data-theme="light"] .btn-edit { background: #deeeff; color: #1e6ab0; }
+[data-theme="light"] .btn-del { background: #ffecec; color: #c0392b; }
 
-  @media(max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+/* ── Charts ───────────────────────────────────────────── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
 
-  .chart-section {
-    background: #1a1a2e;
-    border: 1px solid #2a2a4a;
-    border-radius: 14px;
-    padding: 20px;
-  }
+@media(max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
 
-  .chart-section h3 {
-    font-size: 0.82rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #ff9a3c;
-    margin-bottom: 16px;
-  }
+.chart-section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  transition: background 0.3s, border-color 0.3s;
+}
 
-  .chart-section .chart-wrap { position: relative; height: 280px; }
-  .chart-section canvas { display: block; }
+.chart-section h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent2);
+  margin-bottom: 14px;
+}
 
-  /* Empty state */
-  .empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    color: #555;
-  }
-  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-  .empty-state p { font-size: 0.9rem; }
+.chart-wrap { position: relative; height: 270px; }
+.chart-section canvas { display: block; }
 
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: #1a1a2e;
-    border: 1px solid #ff6b00;
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    z-index: 200;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.3s;
-    box-shadow: 0 4px 20px rgba(255,107,0,0.3);
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
+/* ── Empty state ──────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text4);
+}
+.empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-state p { font-size: 0.9rem; }
 
-  @media(max-width: 640px) {
-    .bar-name { width: 90px; font-size: 0.75rem; }
-    .bar-val { display: none; }
-    thead th:nth-child(5), thead th:nth-child(6) { display: none; }
-    tbody td:nth-child(5), tbody td:nth-child(6) { display: none; }
-  }
+/* ── Modal ────────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 16px;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 26px 22px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 20px 60px var(--shadow);
+}
+
+.modal h2 {
+  font-size: 1.15rem;
+  color: var(--accent2);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+@media(max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+
+label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text4);
+}
+
+input[type="text"], input[type="number"], textarea, select {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,107,0,0.12);
+}
+
+textarea { resize: vertical; min-height: 68px; }
+
+.form-hint { font-size: 0.72rem; color: var(--text4); }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+
+/* ── Toast ────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(255,107,0,0.25);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Print styles ─────────────────────────────────────── */
+@media print {
+  header { background: #ff6b00 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .toolbar, .filter-bar, .action-btns, .modal-overlay, .toast,
+  .theme-btn, .print-btn { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .container { padding: 0 !important; }
+  .card { background: #fff !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .table-wrap { border: 1px solid #ddd !important; overflow: visible !important; }
+  thead tr { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  thead th { color: #ff6b00 !important; }
+  tbody tr:hover { background: transparent !important; }
+  .charts-grid { break-inside: avoid; }
+  .chart-section { border: 1px solid #ddd !important; background: #fff !important; }
+  .badge-pos { color: #16a34a !important; background: #f0fdf4 !important; border-color: #bbf7d0 !important; }
+  .badge-neg { color: #dc2626 !important; background: #fef2f2 !important; border-color: #fecaca !important; }
+  .td-name { color: #1a1a2e !important; }
+  .td-num { color: #2a2a4a !important; }
+  .reason-text { color: #555 !important; }
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media(max-width: 640px) {
+  thead th:nth-child(5), tbody td:nth-child(5) { display: none; }
+}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>📊 Анализ: План vs Факт</h1>
-  <p>Финансовый мониторинг бюджета — KZT</p>
+  <div class="header-left">
+    <h1>📊 Анализ: План vs Факт</h1>
+    <p>Финансовый мониторинг бюджета — KZT</p>
+  </div>
+  <div class="header-actions">
+    <button class="print-btn" onclick="window.print()">🖨 Печать / PDF</button>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Сменить тему">🌙</button>
+  </div>
 </header>
 
 <div class="container">
 
   <!-- Summary Cards -->
-  <div class="summary-grid" id="summaryGrid">
-    <div class="card">
-      <div class="label">Итого план</div>
-      <div class="value" id="sumPlan">—</div>
-    </div>
-    <div class="card">
-      <div class="label">Итого факт</div>
-      <div class="value" id="sumFact">—</div>
-    </div>
-    <div class="card">
-      <div class="label">Абс. отклонение</div>
-      <div class="value" id="sumAbsDev">—</div>
-    </div>
-    <div class="card">
-      <div class="label">Ср. отклонение, %</div>
-      <div class="value" id="avgPctDev">—</div>
-    </div>
-    <div class="card">
-      <div class="label">Строк в таблице</div>
-      <div class="value" id="rowCount">0</div>
-    </div>
+  <div class="summary-grid">
+    <div class="card"><div class="label">Итого план</div><div class="value" id="sumPlan">—</div></div>
+    <div class="card"><div class="label">Итого факт</div><div class="value" id="sumFact">—</div></div>
+    <div class="card"><div class="label">Абс. отклонение</div><div class="value" id="sumAbsDev">—</div></div>
+    <div class="card"><div class="label">Ср. отклонение, %</div><div class="value" id="avgPctDev">—</div></div>
+    <div class="card"><div class="label">Строк</div><div class="value" id="rowCount">0</div></div>
   </div>
 
   <!-- Toolbar -->
@@ -394,23 +538,47 @@
     <button class="btn btn-danger" onclick="resetData()">✕ Сбросить данные</button>
   </div>
 
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <span class="filter-label">Фильтр:</span>
+    <input type="text" id="filterSearch" placeholder="🔍 Поиск по названию..." oninput="applyFilter()">
+    <select id="filterCat" onchange="applyFilter()">
+      <option value="">Все категории</option>
+    </select>
+    <select id="filterDev" onchange="applyFilter()">
+      <option value="">Все отклонения</option>
+      <option value="over">Перерасход (факт > план)</option>
+      <option value="under">Экономия (факт &lt; план)</option>
+      <option value="exact">Без отклонений</option>
+    </select>
+    <select id="sortField" onchange="applyFilter()">
+      <option value="">Сортировка...</option>
+      <option value="name">По названию</option>
+      <option value="plan">По плану ↓</option>
+      <option value="fact">По факту ↓</option>
+      <option value="absDev">По откл. абс.</option>
+      <option value="pctDev">По откл. %</option>
+    </select>
+  </div>
+
   <!-- Table -->
   <div class="table-wrap">
-    <table>
+    <table id="mainTable">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Статья</th>
-          <th>План, KZT</th>
-          <th>Факт, KZT</th>
-          <th>Отклонение, KZT</th>
-          <th>Отклонение, %</th>
-          <th>Причина отклонения</th>
-          <th>Действия</th>
+          <th onclick="sortBy('num')">#</th>
+          <th onclick="sortBy('name')">Статья</th>
+          <th onclick="sortBy('cat')">Категория</th>
+          <th onclick="sortBy('plan')">План, KZT</th>
+          <th onclick="sortBy('fact')">Факт, KZT</th>
+          <th onclick="sortBy('absDev')">Откл., KZT</th>
+          <th onclick="sortBy('pctDev')">Откл., %</th>
+          <th>Причина</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="tableBody">
-        <tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>Нет данных</p></div></td></tr>
+        <tr><td colspan="9"><div class="empty-state"><div class="icon">📋</div><p>Нет данных</p></div></td></tr>
       </tbody>
     </table>
   </div>
@@ -441,6 +609,22 @@
     </div>
     <div class="form-row">
       <div class="form-group">
+        <label>Категория</label>
+        <select id="fCat">
+          <option value="Операционные расходы">Операционные расходы</option>
+          <option value="Доходы">Доходы</option>
+          <option value="CAPEX">CAPEX</option>
+          <option value="Административные">Административные</option>
+          <option value="Прочее">Прочее</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <input type="text" id="fCatCustom" placeholder="или введите свою...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label>План, KZT</label>
         <input type="number" id="fPlan" placeholder="0" min="0" step="1">
         <span class="form-hint">Плановое значение</span>
@@ -467,65 +651,60 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const STORAGE_KEY = 'budget_plan_fact_v1';
-let data = [];
+/* ── State ───────────────────────────────────────────── */
+const STORAGE_KEY = 'budget_plan_fact_v2';
+const THEME_KEY   = 'budget_theme';
+let data    = [];
 let editIdx = null;
+let sortKey = '';
+let sortDir = 1;
 
 const DEFAULT_DATA = [
-  {
-    name: 'Фонд оплаты труда',
-    plan: 45000000,
-    fact: 47300000,
-    reason: 'Внеплановые выплаты премий по результатам квартала, а также найм двух дополнительных специалистов'
-  },
-  {
-    name: 'Аренда офиса',
-    plan: 8500000,
-    fact: 8500000,
-    reason: 'Соответствует договору аренды, отклонений нет'
-  },
-  {
-    name: 'Маркетинг и реклама',
-    plan: 12000000,
-    fact: 9200000,
-    reason: 'Перенос части рекламной кампании на следующий квартал из-за задержки подрядчика'
-  },
-  {
-    name: 'IT-инфраструктура',
-    plan: 6000000,
-    fact: 7850000,
-    reason: 'Незапланированная замена серверного оборудования вследствие аварии'
-  },
-  {
-    name: 'Командировочные расходы',
-    plan: 3200000,
-    fact: 2150000,
-    reason: 'Сокращение числа командировок, переход на дистанционные переговоры'
-  }
+  { name: 'Фонд оплаты труда',     cat: 'Операционные расходы', plan: 45000000, fact: 47300000, reason: 'Внеплановые выплаты премий и найм двух дополнительных специалистов' },
+  { name: 'Аренда офиса',          cat: 'Административные',     plan: 8500000,  fact: 8500000,  reason: 'Соответствует договору аренды, отклонений нет' },
+  { name: 'Маркетинг и реклама',   cat: 'Операционные расходы', plan: 12000000, fact: 9200000,  reason: 'Перенос рекламной кампании на следующий квартал из-за задержки подрядчика' },
+  { name: 'IT-инфраструктура',     cat: 'CAPEX',                plan: 6000000,  fact: 7850000,  reason: 'Незапланированная замена серверного оборудования вследствие аварии' },
+  { name: 'Командировочные',       cat: 'Административные',     plan: 3200000,  fact: 2150000,  reason: 'Сокращение числа командировок, переход на дистанционные переговоры' },
+  { name: 'Выручка от продаж',     cat: 'Доходы',               plan: 120000000,fact: 114500000,reason: 'Снижение объёмов продаж в регионе из-за сезонного спроса' },
+  { name: 'Закупка оборудования',  cat: 'CAPEX',                plan: 18000000, fact: 18000000, reason: 'Закупка прошла по плановой стоимости' },
 ];
 
+/* ── Persistence ─────────────────────────────────────── */
 function load() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  data = saved ? JSON.parse(saved) : [...DEFAULT_DATA];
+  data = saved ? JSON.parse(saved) : DEFAULT_DATA.map(r => ({...r}));
+  const theme = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(theme);
 }
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+/* ── Theme ───────────────────────────────────────────── */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem(THEME_KEY, theme);
+  if (data.length) renderChart(getFilteredSorted());
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+/* ── Helpers ─────────────────────────────────────────── */
 function fmt(n) {
   return Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸';
 }
 
 function fmtPct(p) {
-  const sign = p > 0 ? '+' : '';
-  return sign + p.toFixed(1) + '%';
+  return (p > 0 ? '+' : '') + p.toFixed(1) + '%';
 }
 
 function calcDev(plan, fact) {
-  const abs = fact - plan;
-  const pct = plan !== 0 ? ((fact - plan) / plan) * 100 : 0;
-  return { abs, pct };
+  return { abs: fact - plan, pct: plan !== 0 ? (fact - plan) / plan * 100 : 0 };
 }
 
 function badgeClass(pct) {
@@ -533,150 +712,195 @@ function badgeClass(pct) {
   return pct > 0 ? 'badge-neg' : 'badge-pos';
 }
 
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Filter & Sort ───────────────────────────────────── */
+function getFilteredSorted() {
+  const search = document.getElementById('filterSearch').value.toLowerCase();
+  const cat    = document.getElementById('filterCat').value;
+  const dev    = document.getElementById('filterDev').value;
+
+  let result = data.filter((r, i) => {
+    r._origIdx = i;
+    if (search && !r.name.toLowerCase().includes(search)) return false;
+    if (cat && r.cat !== cat) return false;
+    if (dev) {
+      const d = calcDev(r.plan, r.fact);
+      if (dev === 'over'  && d.pct <= 0) return false;
+      if (dev === 'under' && d.pct >= 0) return false;
+      if (dev === 'exact' && Math.abs(d.pct) >= 0.01) return false;
+    }
+    return true;
+  });
+
+  const sf = document.getElementById('sortField').value || sortKey;
+  if (sf) {
+    result.sort((a, b) => {
+      let va, vb;
+      if (sf === 'name') { va = a.name; vb = b.name; return va.localeCompare(vb) * sortDir; }
+      if (sf === 'cat')  { va = a.cat;  vb = b.cat;  return va.localeCompare(vb) * sortDir; }
+      if (sf === 'plan') { va = a.plan; vb = b.plan; }
+      if (sf === 'fact') { va = a.fact; vb = b.fact; }
+      if (sf === 'absDev') { va = calcDev(a.plan,a.fact).abs; vb = calcDev(b.plan,b.fact).abs; }
+      if (sf === 'pctDev') { va = calcDev(a.plan,a.fact).pct; vb = calcDev(b.plan,b.fact).pct; }
+      return (vb - va) * sortDir;
+    });
+  }
+
+  return result;
+}
+
+function applyFilter() { render(); }
+
+function sortBy(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = -1; }
+  document.getElementById('sortField').value = '';
+  render();
+}
+
+/* ── Category filter options ─────────────────────────── */
+function refreshCatFilter() {
+  const sel = document.getElementById('filterCat');
+  const cur = sel.value;
+  const cats = [...new Set(data.map(r => r.cat))].sort();
+  sel.innerHTML = '<option value="">Все категории</option>' +
+    cats.map(c => `<option value="${escHtml(c)}"${c===cur?' selected':''}>${escHtml(c)}</option>`).join('');
+}
+
+/* ── Render Table ────────────────────────────────────── */
 function render() {
+  refreshCatFilter();
+  const rows = getFilteredSorted();
   const tbody = document.getElementById('tableBody');
 
-  if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>Нет данных — нажмите «Добавить строку»</p></div></td></tr>`;
-    updateSummary([]);
-    renderChart([]);
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">📋</div><p>${data.length ? 'Нет совпадений по фильтру' : 'Нет данных — нажмите «Добавить строку»'}</p></div></td></tr>`;
+    updateSummary(rows);
+    renderChart(rows);
     return;
   }
 
-  let html = '';
-  data.forEach((row, i) => {
-    const { abs, pct } = calcDev(row.plan, row.fact);
-    const cls = badgeClass(pct);
-    const pctLabel = fmtPct(pct);
-    const absLabel = (abs >= 0 ? '+' : '') + fmt(abs);
+  // Group by category
+  const grouped = {};
+  rows.forEach(r => { (grouped[r.cat] = grouped[r.cat] || []).push(r); });
 
-    html += `
-    <tr>
-      <td style="color:#666;font-size:0.8rem;">${i + 1}</td>
-      <td class="td-name">${escHtml(row.name)}</td>
-      <td class="td-num">${fmt(row.plan)}</td>
-      <td class="td-num">${fmt(row.fact)}</td>
-      <td class="td-num">
-        <span class="badge ${cls}">${absLabel}</span>
-      </td>
-      <td class="td-num">
-        <span class="badge ${cls}">${pctLabel}</span>
-      </td>
-      <td><div class="reason-text">${escHtml(row.reason || '—')}</div></td>
-      <td>
-        <div class="action-btns">
+  let html = '';
+  let serial = 0;
+
+  Object.entries(grouped).forEach(([cat, catRows]) => {
+    const catPlan = catRows.reduce((s,r)=>s+r.plan,0);
+    const catFact = catRows.reduce((s,r)=>s+r.fact,0);
+    const {abs:cAbs, pct:cPct} = calcDev(catPlan, catFact);
+
+    html += `<tr class="cat-group-row"><td colspan="9">📁 ${escHtml(cat)}</td></tr>`;
+
+    catRows.forEach(row => {
+      serial++;
+      const {abs, pct} = calcDev(row.plan, row.fact);
+      const cls = badgeClass(pct);
+      const i = row._origIdx;
+
+      html += `
+      <tr>
+        <td style="color:var(--text4);font-size:0.78rem;">${serial}</td>
+        <td class="td-name">${escHtml(row.name)}</td>
+        <td class="td-cat">${escHtml(row.cat)}</td>
+        <td class="td-num">${fmt(row.plan)}</td>
+        <td class="td-num">${fmt(row.fact)}</td>
+        <td class="td-num"><span class="badge ${cls}">${(abs>=0?'+':'')+fmt(abs)}</span></td>
+        <td class="td-num"><span class="badge ${cls}">${fmtPct(pct)}</span></td>
+        <td><div class="reason-text">${escHtml(row.reason||'—')}</div></td>
+        <td><div class="action-btns">
           <button class="btn-sm btn-edit" onclick="editRow(${i})">✎</button>
           <button class="btn-sm btn-del" onclick="deleteRow(${i})">✕</button>
-        </div>
-      </td>
+        </div></td>
+      </tr>`;
+    });
+
+    // Subtotal per category
+    const scls = badgeClass(cPct);
+    html += `
+    <tr class="cat-subtotal">
+      <td colspan="3" style="padding-left:24px;">Итого: ${escHtml(cat)}</td>
+      <td class="td-num">${fmt(catPlan)}</td>
+      <td class="td-num">${fmt(catFact)}</td>
+      <td class="td-num"><span class="badge ${scls}">${(cAbs>=0?'+':'')+fmt(cAbs)}</span></td>
+      <td class="td-num"><span class="badge ${scls}">${fmtPct(cPct)}</span></td>
+      <td colspan="2"></td>
     </tr>`;
   });
 
   tbody.innerHTML = html;
-  updateSummary(data);
-  renderChart(data);
+  updateSummary(rows);
+  renderChart(rows);
 }
 
+/* ── Summary Cards ───────────────────────────────────── */
 function updateSummary(rows) {
-  const sumPlan = rows.reduce((s, r) => s + r.plan, 0);
-  const sumFact = rows.reduce((s, r) => s + r.fact, 0);
-  const absTotal = sumFact - sumPlan;
-  const avgPct = rows.length
-    ? rows.reduce((s, r) => s + calcDev(r.plan, r.fact).pct, 0) / rows.length
-    : 0;
+  const sp = rows.reduce((s,r)=>s+r.plan,0);
+  const sf = rows.reduce((s,r)=>s+r.fact,0);
+  const at = sf - sp;
+  const ap = rows.length ? rows.reduce((s,r)=>s+calcDev(r.plan,r.fact).pct,0)/rows.length : 0;
 
-  document.getElementById('sumPlan').textContent = rows.length ? fmt(sumPlan) : '—';
-  document.getElementById('sumFact').textContent = rows.length ? fmt(sumFact) : '—';
+  document.getElementById('sumPlan').textContent  = rows.length ? fmt(sp) : '—';
+  document.getElementById('sumFact').textContent  = rows.length ? fmt(sf) : '—';
 
-  const absEl = document.getElementById('sumAbsDev');
-  absEl.textContent = rows.length ? (absTotal >= 0 ? '+' : '') + fmt(absTotal) : '—';
-  absEl.className = 'value ' + (rows.length === 0 ? '' : absTotal >= 0 ? 'negative' : 'positive');
+  const ae = document.getElementById('sumAbsDev');
+  ae.textContent  = rows.length ? (at>=0?'+':'')+fmt(at) : '—';
+  ae.className    = 'value' + (rows.length ? (at>=0?' negative':' positive') : '');
 
-  const pctEl = document.getElementById('avgPctDev');
-  pctEl.textContent = rows.length ? fmtPct(avgPct) : '—';
-  pctEl.className = 'value ' + (rows.length === 0 ? '' : avgPct >= 0 ? 'negative' : 'positive');
+  const pe = document.getElementById('avgPctDev');
+  pe.textContent  = rows.length ? fmtPct(ap) : '—';
+  pe.className    = 'value' + (rows.length ? (ap>=0?' negative':' positive') : '');
 
   document.getElementById('rowCount').textContent = rows.length;
 }
 
-let barChart = null;
-let pieChart = null;
+/* ── Charts ──────────────────────────────────────────── */
+let barChart = null, pieChart = null;
 
-const CHART_DEFAULTS = {
-  color: '#94a3b8',
-  plugins: {
-    legend: { labels: { color: '#94a3b8', font: { size: 12 } } },
-    tooltip: {
-      callbacks: {
-        label: ctx => ' ' + Number(ctx.raw).toLocaleString('ru-KZ') + ' ₸'
-      }
-    }
-  }
-};
-
-function renderChart(rows) {
-  renderBarChart(rows);
-  renderPieChart(rows);
+function chartTextColor() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? '#94a3b8' : '#5a6480';
 }
+function chartGridColor() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e1e38' : '#e8ecf4';
+}
+function chartBorderColor() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? '#0f0f1a' : '#ffffff';
+}
+
+function renderChart(rows) { renderBarChart(rows); renderPieChart(rows); }
 
 function renderBarChart(rows) {
   const ctx = document.getElementById('barChartCanvas').getContext('2d');
   if (barChart) barChart.destroy();
+  if (!rows.length) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); return; }
 
-  if (rows.length === 0) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.fillStyle = '#555';
-    ctx.font = '14px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('Нет данных', ctx.canvas.width / 2, 60);
-    return;
-  }
-
-  const labels = rows.map(r => r.name.length > 16 ? r.name.slice(0, 14) + '…' : r.name);
+  const tc = chartTextColor(), gc = chartGridColor();
+  const labels = rows.map(r => r.name.length>14 ? r.name.slice(0,12)+'…' : r.name);
 
   barChart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        {
-          label: 'План',
-          data: rows.map(r => r.plan),
-          backgroundColor: 'rgba(96,165,250,0.7)',
-          borderColor: '#3b82f6',
-          borderWidth: 1,
-          borderRadius: 5,
-        },
-        {
-          label: 'Факт',
-          data: rows.map(r => r.fact),
-          backgroundColor: 'rgba(255,107,0,0.75)',
-          borderColor: '#ff9a3c',
-          borderWidth: 1,
-          borderRadius: 5,
-        }
+        { label:'План', data: rows.map(r=>r.plan),
+          backgroundColor:'rgba(96,165,250,0.7)', borderColor:'#3b82f6', borderWidth:1, borderRadius:5 },
+        { label:'Факт', data: rows.map(r=>r.fact),
+          backgroundColor:'rgba(255,107,0,0.75)', borderColor:'#ff9a3c', borderWidth:1, borderRadius:5 }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       scales: {
-        x: {
-          ticks: { color: '#94a3b8', font: { size: 11 } },
-          grid: { color: '#1e1e38' }
-        },
-        y: {
-          ticks: {
-            color: '#94a3b8',
-            font: { size: 10 },
-            callback: v => (v / 1000000).toFixed(0) + ' млн'
-          },
-          grid: { color: '#1e1e38' }
-        }
+        x: { ticks:{color:tc, font:{size:10}}, grid:{color:gc} },
+        y: { ticks:{color:tc, font:{size:10}, callback: v=>(v/1000000).toFixed(0)+' млн'}, grid:{color:gc} }
       },
       plugins: {
-        ...CHART_DEFAULTS.plugins,
-        legend: { labels: { color: '#94a3b8', font: { size: 12 }, boxWidth: 14 } }
+        legend: { labels:{color:tc, font:{size:12}, boxWidth:14} },
+        tooltip: { callbacks:{ label: c=>' '+Number(c.raw).toLocaleString('ru-KZ')+' ₸' } }
       }
     }
   });
@@ -685,74 +909,58 @@ function renderBarChart(rows) {
 function renderPieChart(rows) {
   const ctx = document.getElementById('pieChartCanvas').getContext('2d');
   if (pieChart) pieChart.destroy();
+  if (!rows.length) return;
 
-  if (rows.length === 0) return;
-
-  const COLORS = [
-    'rgba(255,107,0,0.82)', 'rgba(96,165,250,0.82)', 'rgba(74,222,128,0.82)',
-    'rgba(251,191,36,0.82)', 'rgba(167,139,250,0.82)', 'rgba(248,113,113,0.82)',
-    'rgba(52,211,153,0.82)'
-  ];
-
-  const labels = rows.map(r => r.name.length > 20 ? r.name.slice(0, 18) + '…' : r.name);
+  const COLORS = ['rgba(255,107,0,0.82)','rgba(96,165,250,0.82)','rgba(74,222,128,0.82)',
+    'rgba(251,191,36,0.82)','rgba(167,139,250,0.82)','rgba(248,113,113,0.82)','rgba(52,211,153,0.82)'];
+  const tc = chartTextColor(), bc = chartBorderColor();
+  const labels = rows.map(r => r.name.length>18 ? r.name.slice(0,16)+'…' : r.name);
 
   pieChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels,
-      datasets: [{
-        data: rows.map(r => r.fact),
-        backgroundColor: rows.map((_, i) => COLORS[i % COLORS.length]),
-        borderColor: '#0f0f1a',
-        borderWidth: 2,
-        hoverOffset: 8
-      }]
+      datasets:[{ data: rows.map(r=>r.fact),
+        backgroundColor: rows.map((_,i)=>COLORS[i%COLORS.length]),
+        borderColor: bc, borderWidth:2, hoverOffset:8 }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '55%',
+      responsive:true, maintainAspectRatio:false, cutout:'55%',
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 10 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-              const pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
-              return ` ${Number(ctx.raw).toLocaleString('ru-KZ')} ₸ (${pct}%)`;
-            }
-          }
-        }
+        legend: { position:'bottom', labels:{color:tc, font:{size:10}, boxWidth:12, padding:8} },
+        tooltip: { callbacks:{ label: c=>{
+          const tot = c.dataset.data.reduce((a,b)=>a+b,0);
+          return ` ${Number(c.raw).toLocaleString('ru-KZ')} ₸ (${tot?(c.raw/tot*100).toFixed(1):0}%)`;
+        }}}
       }
     }
   });
 }
 
-function openModal(idx = null) {
+/* ── Modal ───────────────────────────────────────────── */
+function openModal(idx=null) {
   editIdx = idx;
-  const modal = document.getElementById('modalOverlay');
   const title = document.getElementById('modalTitle');
 
   if (idx !== null) {
-    const row = data[idx];
+    const r = data[idx];
     title.textContent = '✎ Редактировать строку';
-    document.getElementById('fName').value = row.name;
-    document.getElementById('fPlan').value = row.plan;
-    document.getElementById('fFact').value = row.fact;
-    document.getElementById('fReason').value = row.reason || '';
+    document.getElementById('fName').value       = r.name;
+    document.getElementById('fCat').value        = r.cat || 'Прочее';
+    document.getElementById('fCatCustom').value  = '';
+    document.getElementById('fPlan').value       = r.plan;
+    document.getElementById('fFact').value       = r.fact;
+    document.getElementById('fReason').value     = r.reason || '';
   } else {
     title.textContent = '＋ Добавить строку';
-    document.getElementById('fName').value = '';
+    ['fName','fCatCustom','fReason'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('fPlan').value = '';
     document.getElementById('fFact').value = '';
-    document.getElementById('fReason').value = '';
+    document.getElementById('fCat').value  = 'Операционные расходы';
   }
 
-  modal.classList.add('open');
-  document.getElementById('fName').focus();
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('fName').focus(), 50);
 }
 
 function closeModal() {
@@ -761,16 +969,18 @@ function closeModal() {
 }
 
 function saveRow() {
-  const name = document.getElementById('fName').value.trim();
-  const plan = parseFloat(document.getElementById('fPlan').value);
-  const fact = parseFloat(document.getElementById('fFact').value);
+  const name   = document.getElementById('fName').value.trim();
+  const custom = document.getElementById('fCatCustom').value.trim();
+  const cat    = custom || document.getElementById('fCat').value;
+  const plan   = parseFloat(document.getElementById('fPlan').value);
+  const fact   = parseFloat(document.getElementById('fFact').value);
   const reason = document.getElementById('fReason').value.trim();
 
-  if (!name) { showToast('⚠ Введите наименование статьи'); return; }
-  if (isNaN(plan) || plan < 0) { showToast('⚠ Укажите корректное плановое значение'); return; }
-  if (isNaN(fact) || fact < 0) { showToast('⚠ Укажите корректное фактическое значение'); return; }
+  if (!name)              { showToast('⚠ Введите наименование статьи'); return; }
+  if (isNaN(plan)||plan<0){ showToast('⚠ Укажите корректное плановое значение'); return; }
+  if (isNaN(fact)||fact<0){ showToast('⚠ Укажите корректное фактическое значение'); return; }
 
-  const row = { name, plan, fact, reason };
+  const row = { name, cat, plan, fact, reason };
 
   if (editIdx !== null) {
     data[editIdx] = row;
@@ -780,82 +990,56 @@ function saveRow() {
     showToast('✓ Строка добавлена');
   }
 
-  save();
-  render();
-  closeModal();
+  save(); render(); closeModal();
 }
 
-function editRow(idx) { openModal(idx); }
+function editRow(idx)   { openModal(idx); }
 
 function deleteRow(idx) {
   if (!confirm(`Удалить строку "${data[idx].name}"?`)) return;
   data.splice(idx, 1);
-  save();
-  render();
+  save(); render();
   showToast('✓ Строка удалена');
 }
 
 function resetData() {
   if (!confirm('Сбросить все данные и загрузить тестовые примеры?')) return;
-  data = [...DEFAULT_DATA];
-  save();
-  render();
+  data = DEFAULT_DATA.map(r=>({...r}));
+  save(); render();
   showToast('✓ Данные сброшены до тестовых');
 }
 
+/* ── CSV Export ──────────────────────────────────────── */
 function exportCSV() {
-  if (data.length === 0) { showToast('⚠ Нет данных для экспорта'); return; }
+  if (!data.length) { showToast('⚠ Нет данных для экспорта'); return; }
 
-  const headers = ['Статья', 'План (KZT)', 'Факт (KZT)', 'Откл. абс. (KZT)', 'Откл. %', 'Причина'];
+  const headers = ['Статья','Категория','План (KZT)','Факт (KZT)','Откл. абс. (KZT)','Откл. %','Причина'];
   const rows = data.map(r => {
-    const { abs, pct } = calcDev(r.plan, r.fact);
+    const {abs,pct} = calcDev(r.plan, r.fact);
     return [
-      `"${r.name}"`,
-      r.plan,
-      r.fact,
-      abs,
-      pct.toFixed(2),
-      `"${(r.reason || '').replace(/"/g, '""')}"`
+      `"${r.name}"`, `"${r.cat}"`, r.plan, r.fact, abs, pct.toFixed(2),
+      `"${(r.reason||'').replace(/"/g,'""')}"`
     ].join(';');
   });
 
-  const csv = '﻿' + headers.join(';') + '\n' + rows.join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'plan_vs_fact.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+  const blob = new Blob(['﻿'+headers.join(';')+'\n'+rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:'plan_vs_fact.csv'});
+  a.click(); URL.revokeObjectURL(a.href);
   showToast('✓ CSV экспортирован');
 }
 
+/* ── Toast ───────────────────────────────────────────── */
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+  setTimeout(()=>t.classList.remove('show'), 2800);
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+/* ── Events ──────────────────────────────────────────── */
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
 
-// Close modal on overlay click
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
-// Enter key in form
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeModal();
-});
-
-// Init
 load();
 render();
 </script>
